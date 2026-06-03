@@ -10,8 +10,13 @@ from ansi2html import Ansi2HTMLConverter
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 import primerize
 
-# Helper function to convert ansi to HTML for Streamlit rendering
+import threading
+from contextlib import redirect_stdout
 
+# Global thread lock to prevent Singleton race conditions in the primerize backend
+primerize_lock = threading.Lock()
+
+# Helper function to convert ansi to HTML for Streamlit rendering
 from ansi2html import Ansi2HTMLConverter
 
 def convert_ansi_to_html(text):
@@ -40,10 +45,22 @@ def strip_ansi(text):
 # APPLICATION CONFIGURATION & SECURITY GUARDRAILS
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Primerize Web Server Suite",
+    page_title="Primerize",
     page_icon="🧪",
     layout="wide",
     initial_sidebar_state="expanded"
+)
+
+# Reduce default blank space at the top of the page without clipping headers
+st.markdown(
+    """
+    <style>
+    .block-container {
+        padding-top: 3.5rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
 
 # Cache execution results to prevent redundant calculations across UI re-renders
@@ -58,31 +75,34 @@ def cached_design_1d(seq, min_tm, num_primers, min_len, max_len, prefix):
     # Note: We must bypass the module's native .set() method here because it contains
     # a known architectural flaw where it fails to properly initialize variables in 
     # the singleton state, leading to runtime ReferenceErrors.
-    return prm_1d.design(
-        sequence=seq,
-        MIN_TM=float(min_tm),
-        NUM_PRIMERS=int(num_primers) if num_primers else None,
-        MIN_LENGTH=int(min_len),
-        MAX_LENGTH=int(max_len),
-        prefix=str(prefix)
-    )
+    with primerize_lock:
+        return prm_1d.design(
+            sequence=seq,
+            MIN_TM=float(min_tm),
+            NUM_PRIMERS=int(num_primers) if num_primers else None,
+            MIN_LENGTH=int(min_len),
+            MAX_LENGTH=int(max_len),
+            prefix=str(prefix)
+        )
 
 @st.cache_data(max_entries=64, ttl=1800)
 def cached_design_2d(_job_1d, offset, min_mut, max_mut, which_lib):
     mut_range = list(range(int(min_mut), int(max_mut) + 1))
-    return primerize.Primerize_2D.design(_job_1d, offset=int(offset), which_muts=mut_range, which_lib=int(which_lib))
+    with primerize_lock:
+        return primerize.Primerize_2D.design(_job_1d, offset=int(offset), which_muts=mut_range, which_lib=int(which_lib))
 
 @st.cache_data(max_entries=64, ttl=1800)
 def cached_design_3d(_job_1d, offset, structures, n_mutations, which_lib, is_single, is_fillwt):
-    return primerize.Primerize_3D.design(
-        _job_1d, 
-        offset=int(offset), 
-        structures=structures, 
-        N_mutations=int(n_mutations), 
-        which_lib=int(which_lib), 
-        is_single=is_single, 
-        is_fillWT=is_fillwt
-    )
+    with primerize_lock:
+        return primerize.Primerize_3D.design(
+            _job_1d, 
+            offset=int(offset), 
+            structures=structures, 
+            N_mutations=int(n_mutations), 
+            which_lib=int(which_lib), 
+            is_single=is_single, 
+            is_fillWT=is_fillwt
+        )
 
 @st.cache_data(max_entries=64, ttl=1800)
 def cached_design_custom(_job_1d, offset, raw_mutation_string):
@@ -92,17 +112,26 @@ def cached_design_custom(_job_1d, offset, raw_mutation_string):
     
     # Push individual targeted construct arrays to the execution engine
     mut_list.push(parsed_muts)
-    return primerize.Primerize_Custom.design(_job_1d, offset=int(offset), mut_list=mut_list)
+    
+    f = io.StringIO()
+    with primerize_lock:
+        with redirect_stdout(f):
+            job = primerize.Primerize_Custom.design(_job_1d, offset=int(offset), mut_list=mut_list)
+            
+    return job, f.getvalue()
 
 # -----------------------------------------------------------------------------
 # HEADER & APPLICATION BRANDING
 # -----------------------------------------------------------------------------
-st.title("Primerize")
 st.markdown(
     """
     **Primerize (previously named NA_thermo)** is a Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design.
-
+    
+    This website lets you run the Primerize algorithms through an intuitive graphical interface, with no coding required. You can design primers for simple 1D assembly, 2D chemical mapping libraries, and 3D structure-guided mutations, all in one place.
+    
     *The original Primerize web server was decommissioned in May 2026. This website provides a graphical interface to the native Python backend.*
+    
+    **[Official Primerize Documentation & Tutorials](https://ribokit.github.io/Primerize/)**
     """
 )
 st.write("---")
@@ -110,6 +139,12 @@ st.write("---")
 # -----------------------------------------------------------------------------
 # SIDEBAR PARAMETER SELECTION ENGINE (Shared Baseline Rules)
 # -----------------------------------------------------------------------------
+# Use columns to shrink and vertically center the logo in the sidebar
+col1, col2, col3 = st.sidebar.columns([1, 2, 1])
+with col2:
+    st.image("logo_primerize.png", width='stretch')
+
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
 st.sidebar.header("Baseline 1D Parameters")
 sb_prefix = st.sidebar.text_input("Construct Prefix/Name", value="my_rna_construct")
 sb_min_tm = st.sidebar.slider("Minimum Overlap Tm (°C)", min_value=45.0, max_value=85.0, value=60.0, step=0.5)
@@ -122,8 +157,8 @@ if sb_limit_primers:
 sb_min_len = st.sidebar.number_input("Minimum Primer Length (nt)", min_value=10, max_value=50, value=15)
 sb_max_len = st.sidebar.number_input("Maximum Primer Length (nt)", min_value=40, max_value=120, value=60)
 
-# 🚀 Server Concurrency Guardrail
-st.sidebar.info("Sequence Length Limit: To maintain stability and performance, sequences are currently limited to a maximum length of 350 nt.")
+# Sidebar note about sequence length limits for free tier stability and performance
+st.sidebar.info("To maintain stability and performance, sequences are limited to a maximum length of 350 nt. The Das Lab has tested the Primerize algorithm with sequences up to 300 nt.")
 
 # -----------------------------------------------------------------------------
 # MULTI-MODE TABS FOR ALL REPOSITORY FEATURES
@@ -139,7 +174,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ---- TAB 1: 1D SIMPLE ASSEMBLY PRIMER DESIGN ----
 with tab1:
     st.header("Simple PCR Assembly Setup")
-    raw_seq = st.text_area("Target Sequence (DNA or RNA)", placeholder="PASTE_YOUR_SEQUENCE_HERE...", height=180, key="t1_seq")
+    raw_seq = st.text_area("Target Sequence (DNA or RNA)", placeholder="PASTE YOUR SEQUENCE HERE...", height=180, key="t1_seq")
     
     if st.button("Generate Baseline 1D Assembly", type="primary", key="btn_1d"):
         cleaned_seq = "".join(raw_seq.split()).upper().replace('U', 'T')
@@ -364,7 +399,7 @@ with tab4:
         if st.button("Compile Tailored Custom Plate Layout", type="primary"):
             with st.spinner("Assembling structural mutant mapping arrays..."):
                 try:
-                    job_custom = cached_design_custom(st.session_state['active_job_1d'], t4_offset, custom_mut_input)
+                    job_custom, error_log = cached_design_custom(st.session_state['active_job_1d'], t4_offset, custom_mut_input)
                     if job_custom.is_success:
                         st.success("Custom Target Variant Mapping Completed.")
                         buf = io.StringIO()
@@ -381,7 +416,14 @@ with tab4:
                         st.markdown("<br>", unsafe_allow_html=True)
                         st.download_button("Download Custom Plate Specification File", data=strip_ansi(output_text_custom), file_name=f"{st.session_state['active_job_1d'].name}_custom_plate.txt")
                     else:
-                        st.error("Error: Custom Construction Intercept. The target variations could not map to the active sequence range safely.")
+                        clean_err = strip_ansi(error_log).strip()
+                        # Extract the specific ValueError message for a cleaner non-technical UX
+                        val_err_match = re.search(r'ValueError:\s*(?:ERROR:\s*)?(.*)', clean_err)
+                        if val_err_match:
+                            parsed_err = val_err_match.group(1).strip()
+                            st.error(f"Error: Custom Construction Intercept. The target variations could not map to the active sequence range safely.\n\n**{parsed_err}**")
+                        else:
+                            st.error(f"Error: Custom Construction Intercept. The target variations could not map to the active sequence range safely.\n\n**Backend Output:**\n`{clean_err}`")
                 except Exception as e:
                     st.error(f"Error Compiling Custom Plate Array: {str(e)}")
 
@@ -391,7 +433,7 @@ with tab5:
     st.markdown("""
 For complete and up-to-date documentation regarding the Primerize pipeline, including DNA template design, IDT oligo ordering, PCR assembly protocols, and in vitro transcription (IVT), please refer to the official documentation:
 
-👉 **[Primerize Pipeline Protocols](https://primerize.stanford.edu/protocol/#pipe)**
+**[Primerize Pipeline Protocols](https://primerize.stanford.edu/protocol/#pipe)**
 """)
 
 # -----------------------------------------------------------------------------
