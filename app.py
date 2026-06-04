@@ -12,7 +12,7 @@ from tabs import tab5_protocols
 # APPLICATION CONFIGURATION & SECURITY GUARDRAILS
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Primerize",
+    page_title="Primerize Web",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -39,11 +39,9 @@ st.markdown(
 # -----------------------------------------------------------------------------
 st.markdown(
     """
-    **Primerize (previously named NA_thermo)** is a Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design.
-    
-    This website lets you run the Primerize algorithms through an intuitive graphical interface, with no coding required. You can design primers for simple 1D assembly, 2D chemical mapping libraries, and 3D structure-guided mutations, all in one place.
-    
-    *The original Primerize web server was decommissioned in May 2026. This website provides a graphical interface to the native Python backend.*
+    **Primerize Web** is an independent, unofficial web interface for the Primerize Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design.
+
+*The original Primerize web server was decommissioned in May 2026. This site is not affiliated with or endorsed by the Das Lab or Stanford University.*
     
     **[Official Primerize Documentation & Tutorials](https://ribokit.github.io/Primerize/)**
     """
