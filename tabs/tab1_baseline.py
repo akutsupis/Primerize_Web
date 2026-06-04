@@ -91,6 +91,7 @@ def render(sb_prefix, sb_t7_check, sb_min_tm, sb_num_primers, sb_min_len, sb_max
                         
                         for i, primer in enumerate(job_1d.primer_set):
                             col1, col2, col3 = st.columns([1, 1, 8])
+                            
                             with col1:
                                 badge = "F" if i % 2 == 0 else "R"
                                 color = "#00bcd4" if badge == "F" else "#ff5722"
@@ -108,7 +109,16 @@ def render(sb_prefix, sb_t7_check, sb_min_tm, sb_num_primers, sb_min_len, sb_max
                             unsafe_allow_html=True
                         )
                         st.markdown("<br>", unsafe_allow_html=True)
-                        st.download_button("Download Design Matrix Text File", data=strip_ansi(raw_output), file_name=f"{job_1d.name}_1D_design.txt")
+                        
+                        dcol1, dcol2 = st.columns(2)
+                        with dcol1:
+                            st.download_button("Download Design Matrix Text File", data=strip_ansi(raw_output), file_name=f"{job_1d.name}_1D_design.txt")
+                        with dcol2:
+                            csv_data = "Primer Name,Sequence\n"
+                            for i, p in enumerate(job_1d.primer_set):
+                                suffix = 'FR'[i % 2]
+                                csv_data += f"{job_1d.name}-{i + 1}{suffix},{p}\n"
+                            st.download_button("Download Primers CSV (Tubes)", data=csv_data.encode('utf-8'), file_name=f"{job_1d.name}_primers.csv", mime="text/csv")
                         
                         # 7. Cleaned IDT Bulk Ordering Block
                         st.write("---")
