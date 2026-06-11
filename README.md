@@ -1,6 +1,6 @@
 # Primerize Web 🧬
 
-**Primerize Web** is a free, open-source web application built on the Primerize Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design. You can use Primerize Web by visiting [primerize.streamlit.app.](primerize.streamlit.app)
+**Primerize Web** is a free, open-source web application built on the Primerize Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design. You can use Primerize Web by visiting [primerize.streamlit.app.](https://primerize.streamlit.app)
 
 This website lets you run the Primerize algorithms without writing code. You can design primers for simple 1D assembly, 2D chemical mapping libraries, and 3D structure-guided mutations, and more!
 
@@ -59,7 +59,7 @@ If you have an idea or see a bug, please feel free to:
 
 **Primerize Web does not collect or track your data.** Primerize Web does not use a database or log any personally identifiable information. We do not log or permenantly store your DNA/RNA sequence data, project names, or generated primers. Session data is strictly tied to your active browser tab and destroyed if you close or reload the tab.
 
-**If you visit [primerize.streamlit.app](primerize.streamlit.app):** Because this application is hosted on the free Streamlit Community Cloud platform, Streamlit (and its parent company, Snowflake) automatically collects some broad usage information. This is standard for cloud hosting providers and generally includes basic server access logs (such as IP addresses and browser types) and anonymous page-view analytics used to maintain their platform security and stability. You can review their full platform privacy policy [here](https://streamlit.io/privacy-policy).
+**If you visit [primerize.streamlit.app](https://primerize.streamlit.app):** Because this application is hosted on the free Streamlit Community Cloud platform, Streamlit (and its parent company, Snowflake) automatically collects some broad usage information. This is standard for cloud hosting providers and generally includes basic server access logs (such as IP addresses and browser types) and anonymous page-view analytics used to maintain their platform security and stability. You can review their full platform privacy policy [here](https://streamlit.io/privacy-policy).
 
 Primerize Web is open-source software under the MIT License. The original Primerize Python package is also released under the MIT License. You can review the code yourself to verify that it does what we say it does.
 
