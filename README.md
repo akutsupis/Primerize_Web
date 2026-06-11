@@ -1,6 +1,6 @@
 # Primerize Web 🧬
 
-**Primerize Web** is a web application built on the Primerize Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design.
+**Primerize Web** is a free, open-source web application built on the Primerize Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design. You can use Primerize Web by visiting [primerize.streamlit.app.](primerize.streamlit.app)
 
 This website lets you run the Primerize algorithms without writing code. You can design primers for simple 1D assembly, 2D chemical mapping libraries, and 3D structure-guided mutations, and more!
 
@@ -14,16 +14,16 @@ The code for the original Primerize web server was not released publicly, so we 
 ## What is Primerize?
 Primerize is a thermodynamic engine that designs optimized PCR assembly primers for high-throughput RNA synthesis. If a researcher wants to map the 2D or 3D structure of an RNA molecule, they need to design dozens or hundreds of targeted mutations. Doing this by hand is a nightmare. Primerize automates it by calculating thermodynamic folding models to minimize mispriming.
 
-## How it Works (Under the Hood)
-If you're looking to contribute, here's a primer (pun intended) on how the app is architected:
+## How it Works
+Here's a primer (pun intended) on how the app is architected:
 
-- **Streamlit:** The entire UI is written in pure Python using Streamlit. This makes it incredibly easy to spin up natively or containerize if you prefer to use docker. Guides detailing how to dockerize a Streamlit app are easy to find online.
+- **Streamlit:** The entire UI is written in pure Python using Streamlit. This makes it easy to spin up natively or containerize if you prefer to use docker. Guides detailing how to dockerize a Streamlit app are easy to find online.
 - **Modular Tabs:** The UI is broken down into `tabs/` (e.g., `tab1_baseline.py`, `tab2_mapping.py`). This makes it easy to add new features to a specific page without breaking existing ones.
 - **RAM-only processes** The only feature that writes to disk is the .xls plate exports on tabs 2, 3, and 4. The other features work entirely in-memory, which helps keep Primerize Web extremely fast.
 - **Thread-Safe Concurrency:** The core primerize math engine was originally designed for a single user, meaning that if 50 people visit the website at once, they are all physically sharing the same engine in the background. If two researchers clicked "Primerize!" at the exact same time, their sequences would collide inside the engine and corrupt the results. To make this safe for a public web application, we implemented a queuing lock (`threading.Lock()`). When you submit a sequence, the app temporarily "locks" the engine, does your math, saves your result, and then unlocks it for the next person in line.
 - **Temporary Sessions & State:** There is no backend database. User sessions are managed purely through Streamlit's ephemeral `st.session_state` dictionary. Every visitor gets their own isolated state memory tied to their active browser tab; if the tab is closed or refreshed, the server dumps the memory.
-- **Cross-Tab Synchronization:** The application enforces a linear workflow. The user must first generate a baseline sequence in Tab 1, which the app saves into `st.session_state['active_job_1d']`. Tabs 2, 3, and 4 read directly from this session state, allowing the user to seamlessly generate complex mapping libraries without ever having to re-enter their sequence.
-- **ANSI-to-HTML Log Intercept:** The legacy `primerize` engine outputs 3D alignment matrices directly to the console (`stdout`) using ANSI color codes. Since Python's print() statements output to the server's terminal rather than the user's web page, we built a wrapper in `utils.py` using `contextlib.redirect_stdout` to intercept the print stream, parse the ANSI color codes into raw HTML/CSS, and render the terminal output directly inside the Streamlit UI.
+- **Cross-Tab Sync:** The application enforces a linear workflow. The user must first generate a baseline sequence in Tab 1, which the app saves into `st.session_state['active_job_1d']`. Tabs 2, 3, and 4 read directly from this session state, allowing the user to seamlessly generate complex mapping libraries without ever having to re-enter their sequence.
+- **ANSI-to-HTML Log Intercept:** The `primerize` engine outputs 3D alignment matrices directly to the console (`stdout`) using ANSI color codes. Since Python's print() statements output to the server's terminal rather than the user's web page, we built a wrapper in `utils.py` using `contextlib.redirect_stdout` to intercept the print stream, parse the ANSI color codes into raw HTML/CSS, and render the terminal output directly inside the Streamlit UI.
 
 ## How to Work on It
 We would love your help! All contributions are welcome.
