@@ -31,8 +31,8 @@ We would love your help! All contributions are welcome.
 ### Getting Started
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-org/Primerize_GUI.git
-   cd Primerize_GUI
+   git clone https://github.com/akutsupis/Primerize_Web.git
+   cd Primerize_Web
    ```
 2. Create a virtual environment and install the dependencies:
    ```bash
