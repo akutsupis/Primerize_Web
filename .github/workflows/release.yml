@@ -4,6 +4,7 @@ name: Build and Publish Docker Image
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 # Grant permissions required to push images to GitHub Packages (GHCR)
 permissions:
@@ -30,7 +31,7 @@ jobs:
       # 3. Extract metadata for the Docker image based on the release information
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -39,10 +40,10 @@ jobs:
 
       # 4. Build the image and push it to GHCR
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ id.meta.outputs.tags }}
-          labels: ${{ id.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

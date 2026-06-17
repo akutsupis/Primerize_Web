@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Copy and install dependencies
 COPY requirements.txt .
-ENV PIP_ROOT_USER_ACTION=ignore # Prevents pip from warning us about running as root
+ENV PIP_ROOT_USER_ACTION=ignore
 RUN pip install --no-cache-dir --disable-pip-version-check -r requirements.txt
 
 # Copy the rest of the code
