@@ -1,8 +1,8 @@
 # Primerize Web 🧬
 
-**Primerize Web** is a free, open-source web application built on the Primerize Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design. You can use Primerize Web by visiting [primerize.streamlit.app.](https://primerize.streamlit.app)
+**Primerize Web** is a free, open-source web application built on the Primerize Python package for primer design and nucleic acid thermodynamics, developed by the Das Lab at Stanford University for high-throughput RNA synthesis and design. You can use Primerize Web by visiting [primerize.streamlit.app.](https://primerize.streamlit.app).
 
-This website lets you run the Primerize algorithms without writing code. You can design primers for simple 1D assembly, 2D chemical mapping libraries, and 3D structure-guided mutations, and more!
+This website lets you run the Primerize algorithms without writing code. You can design primers for simple 1D assembly, 2D chemical mapping libraries, and 3D structure-guided mutations, and more! 
 
 *This website is not affiliated with the official Primerize web server, Stanford University, or the Das Lab.*
 
@@ -17,7 +17,7 @@ Primerize is a thermodynamic engine that designs optimized PCR assembly primers 
 ## How it Works
 Here's a primer (pun intended) on how the app is architected:
 
-- **Streamlit:** The entire UI is written in pure Python using Streamlit. This makes it easy to spin up natively or containerize if you prefer to use docker. Guides detailing how to dockerize a Streamlit app are easy to find online.
+- **Streamlit:** The entire UI is written in pure Python using Streamlit.
 - **Modular Tabs:** The UI is broken down into `tabs/` (e.g., `tab1_baseline.py`, `tab2_mapping.py`). This makes it easy to add new features to a specific page without breaking existing ones.
 - **RAM-only processes** The only feature that writes to disk is the .xls plate exports on tabs 2, 3, and 4. The other features work entirely in-memory, which helps keep Primerize Web extremely fast.
 - **Thread-Safe Concurrency:** The core primerize math engine was originally designed for a single user, meaning that if 50 people visit the website at once, they are all physically sharing the same engine in the background. If two researchers clicked "Primerize!" at the exact same time, their sequences would collide inside the engine and corrupt the results. To make this safe for a public web application, we implemented a queuing lock (`threading.Lock()`). When you submit a sequence, the app temporarily "locks" the engine, does your math, saves your result, and then unlocks it for the next person in line.
@@ -25,6 +25,19 @@ Here's a primer (pun intended) on how the app is architected:
 - **Cross-Tab Sync:** The application enforces a linear workflow. The user must first generate a baseline sequence in Tab 1, which the app saves into `st.session_state['active_job_1d']`. Tabs 2, 3, and 4 read directly from this session state, allowing the user to seamlessly generate complex mapping libraries without ever having to re-enter their sequence.
 - **ANSI-to-HTML Log Intercept:** The `primerize` engine outputs 3D alignment matrices directly to the console (`stdout`) using ANSI color codes. Since Python's print() statements output to the server's terminal rather than the user's web page, we built a wrapper in `utils.py` using `contextlib.redirect_stdout` to intercept the print stream, parse the ANSI color codes into raw HTML/CSS, and render the terminal output directly inside the Streamlit UI.
 
+## Self-hosting via Docker
+Primerize Web is fully containerized. You can easily pull the pre-built image from GitHub Container Registry (GHCR) or build it locally.
+
+Every time a new release is published, a Docker image is automatically built and pushed to GHCR.
+
+Pull the latest image:
+```bash
+docker pull ghcr.io/akutsupis/primerize_web:latest
+```
+Run the container:
+```bash
+docker run -d -p 8501:8501 --name primerize-web ghcr.io/akutsupis/primerize_web:latest
+```
 ## How to Work on It
 We would love your help! All contributions are welcome.
 
